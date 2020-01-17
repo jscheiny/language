@@ -1,0 +1,26 @@
+{
+    "extends": [
+        "tslint-config-standard",
+        "tslint-config-prettier",
+        "tslint-plugin-prettier"
+    ],
+    "rules": {
+        "prettier": [
+            true,
+            {
+                "printWidth": 120,
+                "tabWidth": 4,
+                "trailingComma": "all"
+            }
+        ],
+        "interface-name": [true, "never-prefix"],
+        "member-ordering": [
+            true,
+            {
+                "order": "statics-first"
+            }
+        ],
+        "no-use-before-declare": false,
+        "ordered-imports": true
+    }
+}
