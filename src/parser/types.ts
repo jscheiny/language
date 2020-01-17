@@ -1,7 +1,7 @@
 import { ConstantToken, VariableToken } from "../tokenizer/tokens";
 
 type VariableTokenType = VariableToken["kind"];
-type InputType<P> = keyof P | ConstantToken | VariableTokenType;
+export type InputType<P> = keyof P | ConstantToken | VariableTokenType;
 
 interface ProductionFactory<P> {
     <K extends keyof P>(key: K): ProductionInputsBinder<P, K>;
@@ -36,7 +36,7 @@ interface ProductionUnionDefinition<P, K extends keyof P, I extends InputType<P>
     rule: ProductionUnionRule<P, K, I>;
 }
 
-type ProductionDefinition<P, K extends keyof P, I extends InputType<P>[]> =
+export type ProductionDefinition<P, K extends keyof P, I extends InputType<P>[]> =
     | ProductionDerivedDefinition<P, K, I>
     | ProductionUnionDefinition<P, K, I>;
 
@@ -48,7 +48,7 @@ type UnwrapInput<P, I> = I extends keyof P
 
 type ArrayType<T> = T extends Array<infer U> ? U : never;
 
-type Grammar<P> = { [K in keyof P]: ProductionDefinition<P, K, any[]> };
+export type Grammar<P> = { [K in keyof P]: ProductionDefinition<P, K, any[]> };
 
 export function createGrammar<P>(create: (define: ProductionFactory<P>) => Grammar<P>): Grammar<P> {
     const define: ProductionFactory<P> = () => ({

@@ -1,5 +1,5 @@
 import { Operator } from "../constants";
-import { createGrammar } from "./rule";
+import { createGrammar } from "./types";
 
 interface Expression {
     left: Expression | number;
@@ -14,7 +14,7 @@ interface Productions {
     Expression: Expression;
 }
 
-export const Grammar = createGrammar<Productions>(define => ({
+export const GRAMMAR = createGrammar<Productions>(define => ({
     LiteralExpression: define("LiteralExpression")
         .given("NumberLiteral")
         .derive(value => ({ left: parseFloat(value.literal), operator: Operator.ADD, right: 0 })),
