@@ -21,7 +21,7 @@ interface ProductionDerivedRule<P, K extends keyof P, I extends InputType<P>[]> 
 }
 
 interface ProductionUnionRule<P, K extends keyof P, I extends InputType<P>[]> {
-    (input: UnwrapInput<P, I[number]>): P[K];
+    (input: UnwrapInput<P, ArrayType<I>>): P[K];
 }
 
 interface ProductionDerivedDefinition<P, K extends keyof P, I extends InputType<P>[]> {
@@ -45,6 +45,8 @@ type UnwrapInputs<P, I extends InputType<P>[]> = { [K in keyof I]: UnwrapInput<P
 type UnwrapInput<P, I> = I extends keyof P
     ? P[I]
     : I extends ConstantToken ? I : I extends VariableTokenType ? Extract<VariableToken, { kind: I }> : never;
+
+type ArrayType<T> = T extends Array<infer U> ? U : never;
 
 type Grammar<P> = { [K in keyof P]: ProductionDefinition<P, K, any[]> };
 
