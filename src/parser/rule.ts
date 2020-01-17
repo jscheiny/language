@@ -46,7 +46,7 @@ type UnwrapInput<P, I> = I extends keyof P
     ? P[I]
     : I extends ConstantToken ? I : I extends VariableTokenType ? Extract<VariableToken, { kind: I }> : never;
 
-export type Grammar<P> = { [K in keyof P]: ProductionDefinition<P, K, any[]> };
+type Grammar<P> = { [K in keyof P]: ProductionDefinition<P, K, any[]> };
 
 export function createGrammar<P>(create: (define: GrammarFactory<P>) => Grammar<P>): Grammar<P> {
     const define: GrammarFactory<P> = (key): ProductionFactory<P, typeof key> => ({
