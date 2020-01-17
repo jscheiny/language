@@ -1,5 +1,5 @@
 import { Operator } from "../constants";
-import { TokenKind, TokenType } from "../tokenizer/tokens";
+import { ConstantToken, VariableToken } from "../tokenizer/tokens";
 
 interface Expression {
     left: Expression | number;
@@ -14,83 +14,72 @@ interface ProductionResults {
     Expression: Expression;
 }
 
-interface TokenProductionType<K extends TokenKind> {
-    token: K;
-    matcher?: (token: TokenType<K>) => boolean;
+type VariableTokenType = VariableToken["kind"];
+type InputType<P> = keyof P | ConstantToken | VariableTokenType;
+
+interface ProductionFactory<P, K extends keyof P> {
+    given: <I extends InputType<P>[]>(...inputs: I) => ProductionDefinitionBinder<P, K, I>;
 }
 
-type ProductionType = keyof ProductionResults;
-type InputType = ProductionType | TokenProductionType<any>;
-
-interface ProductionFactory<P extends ProductionType> {
-    given: <I extends InputType[]>(...inputs: I) => ProductionDefinitionBinder<P, I>;
+interface ProductionDefinitionBinder<P, K extends keyof P, I extends InputType<P>[]> {
+    derive: (rule: ProductionDerivedRule<P, K, I>) => ProductionDerivedDefinition<P, K, I>;
+    union: (rule: ProductionUnionRule<P, K, I>) => ProductionUnionDefinition<P, K, I>;
 }
 
-interface ProductionDefinitionBinder<P extends ProductionType, I extends InputType[]> {
-    derive: (rule: ProductionDerivedRule<P, I>) => ProductionDerivedDefinition<P, I>;
-    union: (rule: ProductionUnionRule<P, I>) => ProductionUnionDefinition<P, I>;
+interface ProductionDerivedRule<P, K extends keyof P, I extends InputType<P>[]> {
+    (...inputs: UnwrapInputs<P, I>): P[K];
 }
 
-interface ProductionDerivedRule<P extends ProductionType, I extends InputType[]> {
-    (...inputs: UnwrapInputs<I>): ProductionResults[P];
+interface ProductionUnionRule<P, K extends keyof P, I extends InputType<P>[]> {
+    (input: UnwrapInput<P, I[number]>): P[K];
 }
 
-interface ProductionUnionRule<P extends ProductionType, I extends InputType[]> {
-    (input: UnwrapInput<I[number]>): ProductionResults[P];
-}
-
-interface ProductionDerivedDefinition<P extends ProductionType, I extends InputType[]> {
+interface ProductionDerivedDefinition<P, K extends keyof P, I extends InputType<P>[]> {
     kind: "derived";
     inputs: I;
-    rule: ProductionDerivedRule<P, I>;
+    rule: ProductionDerivedRule<P, K, I>;
 }
 
-interface ProductionUnionDefinition<P extends ProductionType, I extends InputType[]> {
+interface ProductionUnionDefinition<P, K extends keyof P, I extends InputType<P>[]> {
     kind: "union";
     inputs: I;
-    rule: ProductionUnionRule<P, I>;
+    rule: ProductionUnionRule<P, K, I>;
 }
 
-type ProductionDefinition<P extends ProductionType, I extends InputType[]> =
-    | ProductionDerivedDefinition<P, I>
-    | ProductionUnionDefinition<P, I>;
+type ProductionDefinition<P, K extends keyof P, I extends InputType<P>[]> =
+    | ProductionDerivedDefinition<P, K, I>
+    | ProductionUnionDefinition<P, K, I>;
 
-type UnwrapInputs<Inputs extends InputType[]> = { [K in keyof Inputs]: UnwrapInput<Inputs[K]> };
+type UnwrapInputs<P, I extends InputType<P>[]> = { [K in keyof I]: UnwrapInput<P, I[K]> };
 
-type UnwrapInput<I> = I extends ProductionType
-    ? ProductionResults[I]
-    : I extends TokenProductionType<infer K> ? TokenType<K> : never;
+type UnwrapInput<P, I> = I extends keyof P
+    ? P[I]
+    : I extends ConstantToken ? I : I extends VariableTokenType ? Extract<VariableToken, { kind: I }> : never;
 
-function defineProduction<K extends keyof ProductionResults>(_production: K): ProductionFactory<K> {
-    return {
-        given: <I extends InputType[]>(...inputs: I) => ({
+type Grammar<P> = { [K in keyof P]: ProductionDefinition<P, K, any[]> };
+
+function createProductionFactory<P>() {
+    return <K extends keyof P>(_key: K): ProductionFactory<P, K> => ({
+        given: <I extends InputType<P>[]>(...inputs: I) => ({
             derive: rule => ({ kind: "derived", inputs, rule }),
             union: rule => ({ kind: "union", inputs, rule }),
         }),
-    };
+    });
 }
 
-type ProductionDefinitions = { [P in keyof ProductionResults]: ProductionDefinition<P, any[]> };
+const define = createProductionFactory<ProductionResults>();
 
-function token<K extends TokenKind>(token: K, _matcher?: (token: TokenType<K>) => boolean): TokenProductionType<K> {
-    return { token };
-}
-
-const ProductionDefinitions: ProductionDefinitions = {
-    LiteralExpression: defineProduction("LiteralExpression")
-        .given(token("NumberLiteral"))
+const Grammar: Grammar<ProductionResults> = {
+    LiteralExpression: define("LiteralExpression")
+        .given("NumberLiteral")
         .derive(value => ({ left: parseFloat(value.literal), operator: Operator.ADD, right: 0 })),
-    ParenthesizedExpression: defineProduction("ParenthesizedExpression")
-        .given(
-            token("Operator", tok => tok.operator === Operator.OPEN_PAREN),
-            "Expression",
-            token("Operator", tok => tok.operator === Operator.CLOSE_PAREN),
-        )
+    ParenthesizedExpression: define("ParenthesizedExpression")
+        .given(Operator.OPEN_PAREN, "Expression", Operator.CLOSE_PAREN)
         .derive((_open, expression, _close) => expression),
-    BinaryOpExpression: defineProduction("BinaryOpExpression")
-        .given("Expression", token("Operator", tok => tok.operator === Operator.ADD), "Expression")
-        .derive((left, operator, right) => ({ left, operator: operator.operator, right })),
-    Expression: defineProduction("Expression")
+    BinaryOpExpression: define("BinaryOpExpression")
+        .given("Expression", Operator.ADD, "Expression")
+        .derive((left, operator, right) => ({ left, operator: operator, right })),
+    Expression: define("Expression")
         .given("LiteralExpression", "ParenthesizedExpression", "BinaryOpExpression")
         .union(expression => expression),
 };
