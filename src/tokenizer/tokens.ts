@@ -19,16 +19,6 @@ export interface BooleanLiteralToken {
     literal: BooleanLiteral;
 }
 
-export interface KeywordToken {
-    kind: "Keyword";
-    keyword: Keyword;
-}
-
-export interface OperatorToken {
-    kind: "Operator";
-    operator: Operator;
-}
-
 // Implement this
 export interface CommentToken {
     kind: "Comment";
@@ -41,14 +31,14 @@ export interface IdentifierToken {
 }
 
 export type Token =
+    | Keyword
+    | Operator
+    | BooleanLiteral
     | WhitespaceToken
     | NumberLiteralToken
     | StringLiteralToken
-    | BooleanLiteralToken
-    | KeywordToken
-    | OperatorToken
     | CommentToken
     | IdentifierToken;
 
-export type TokenKind = Token["kind"];
-export type TokenType<K extends TokenKind> = Extract<Token, { kind: K }>;
+export type ConstantToken = Extract<Token, string>;
+export type VariableToken = Exclude<Token, string>;

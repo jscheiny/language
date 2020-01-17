@@ -37,9 +37,9 @@ const findNumberLiteralMatch = createRegexMatchFinder(/^\d+(\.\d*)?/, matches =>
     kind: "NumberLiteral",
     literal: matches[0],
 }));
-const findBooleanLiteralMatch = createEnumMatchFinder(BooleanLiteral, literal => ({ kind: "BooleanLiteral", literal }));
-const findOperatorMatch = createEnumMatchFinder(Operator, operator => ({ kind: "Operator", operator }));
-const findKeywordMatch = createEnumMatchFinder(Keyword, keyword => ({ kind: "Keyword", keyword }));
+const findBooleanLiteralMatch = createEnumMatchFinder(BooleanLiteral);
+const findOperatorMatch = createEnumMatchFinder(Operator);
+const findKeywordMatch = createEnumMatchFinder(Keyword);
 
 const matchers = [
     findWhitespaceMatch,
@@ -74,22 +74,19 @@ function createRegexMatchFinder(regex: RegExp, getToken: (matches: RegExpMatchAr
     };
 }
 
-function createEnumMatchFinder<T extends string>(
-    type: { [index: string]: T },
-    getToken: (value: T) => Token,
-): MatchFinder {
-    const values = Object.values(type);
-    values.sort((a, b) => b.length - a.length);
+function createEnumMatchFinder<T extends Extract<Token, string>>(type: { [index: string]: T }): MatchFinder {
+    const tokens = Object.values(type);
+    tokens.sort((a, b) => b.length - a.length);
 
     return text => {
-        for (const value of values) {
-            if (!text.startsWith(value)) {
+        for (const token of tokens) {
+            if (!text.startsWith(token)) {
                 continue;
             }
 
             return {
-                token: getToken(value),
-                length: value.length,
+                token: token,
+                length: token.length,
             };
         }
 
