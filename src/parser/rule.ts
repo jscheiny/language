@@ -1,21 +1,11 @@
-import { Operator } from "../constants";
 import { ConstantToken, VariableToken } from "../tokenizer/tokens";
-
-interface Expression {
-    left: Expression | number;
-    operator: Operator;
-    right: Expression | number;
-}
-
-interface ProductionResults {
-    LiteralExpression: Expression;
-    ParenthesizedExpression: Expression;
-    BinaryOpExpression: Expression;
-    Expression: Expression;
-}
 
 type VariableTokenType = VariableToken["kind"];
 type InputType<P> = keyof P | ConstantToken | VariableTokenType;
+
+interface GrammarFactory<P> {
+    <K extends keyof P>(key: K): ProductionFactory<P, K>;
+}
 
 interface ProductionFactory<P, K extends keyof P> {
     given: <I extends InputType<P>[]>(...inputs: I) => ProductionDefinitionBinder<P, K, I>;
@@ -56,30 +46,15 @@ type UnwrapInput<P, I> = I extends keyof P
     ? P[I]
     : I extends ConstantToken ? I : I extends VariableTokenType ? Extract<VariableToken, { kind: I }> : never;
 
-type Grammar<P> = { [K in keyof P]: ProductionDefinition<P, K, any[]> };
+export type Grammar<P> = { [K in keyof P]: ProductionDefinition<P, K, any[]> };
 
-function createProductionFactory<P>() {
-    return <K extends keyof P>(_key: K): ProductionFactory<P, K> => ({
+export function createGrammar<P>(create: (define: GrammarFactory<P>) => Grammar<P>): Grammar<P> {
+    const define: GrammarFactory<P> = (key): ProductionFactory<P, typeof key> => ({
         given: <I extends InputType<P>[]>(...inputs: I) => ({
             derive: rule => ({ kind: "derived", inputs, rule }),
             union: rule => ({ kind: "union", inputs, rule }),
         }),
     });
+
+    return create(define);
 }
-
-const define = createProductionFactory<ProductionResults>();
-
-const Grammar: Grammar<ProductionResults> = {
-    LiteralExpression: define("LiteralExpression")
-        .given("NumberLiteral")
-        .derive(value => ({ left: parseFloat(value.literal), operator: Operator.ADD, right: 0 })),
-    ParenthesizedExpression: define("ParenthesizedExpression")
-        .given(Operator.OPEN_PAREN, "Expression", Operator.CLOSE_PAREN)
-        .derive((_open, expression, _close) => expression),
-    BinaryOpExpression: define("BinaryOpExpression")
-        .given("Expression", Operator.ADD, "Expression")
-        .derive((left, operator, right) => ({ left, operator: operator, right })),
-    Expression: define("Expression")
-        .given("LiteralExpression", "ParenthesizedExpression", "BinaryOpExpression")
-        .union(expression => expression),
-};
