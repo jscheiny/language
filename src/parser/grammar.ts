@@ -14,7 +14,7 @@ interface Productions {
     Expression: Expression;
 }
 
-const Grammar = createGrammar<Productions>(define => ({
+export const Grammar = createGrammar<Productions>(define => ({
     LiteralExpression: define("LiteralExpression")
         .given("NumberLiteral")
         .derive(value => ({ left: parseFloat(value.literal), operator: Operator.ADD, right: 0 })),
