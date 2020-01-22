@@ -1,4 +1,11 @@
-import { BaseTerminal, Grammar, GrammarProductions, Production, ProductionParameters, ProductionRule } from "./types";
+import {
+    BaseTerminal,
+    Grammar,
+    GrammarProductions,
+    Production,
+    ProductionParameters,
+    ProductionRule,
+} from "./grammarTypes";
 
 interface ProductionBuilderFactory<NonTerminal, Terminal extends BaseTerminal> {
     <Key extends keyof NonTerminal>(key: Key): ProductionBuilder<NonTerminal, Terminal, Key>;

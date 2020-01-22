@@ -1,8 +1,8 @@
 /** A map from non-terminals to productions for those non-terminals  */
-export type Grammar<NonTerminal, Terminal extends BaseTerminal> = {
+export interface Grammar<NonTerminal, Terminal extends BaseTerminal> {
     productions: GrammarProductions<NonTerminal, Terminal>;
     start: keyof NonTerminal;
-};
+}
 
 export type GrammarProductions<NonTerminal, Terminal extends BaseTerminal> = {
     [Key in keyof NonTerminal]: Production<NonTerminal, Terminal, Key>
