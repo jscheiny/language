@@ -1,26 +1,33 @@
 import { Grammar, Production, ProductionParameters, ProductionRule } from "./types";
 
-interface ProductionBuilderFactory<G> {
-    <K extends keyof G>(key: K): ProductionBuilder<G, K>;
+interface ProductionBuilderFactory<NonTerminals> {
+    <Key extends keyof NonTerminals>(key: Key): ProductionBuilder<NonTerminals, Key>;
 }
 
-interface ProductionBuilder<G, K extends keyof G> {
-    given<P extends ProductionParameters<G>>(...parameters: P): ProductionRuleBinder<G, K, P>;
-    build(): Production<G, K>;
+interface ProductionBuilder<NonTerminals, Key extends keyof NonTerminals> {
+    given<P extends ProductionParameters<NonTerminals>>(...parameters: P): ProductionRuleBinder<NonTerminals, Key, P>;
+    build(): Production<NonTerminals, Key>;
 }
 
-interface ProductionRuleBinder<G, K extends keyof G, P extends ProductionParameters<G>> {
-    produce(rule: ProductionRule<G, K, P>): ProductionBuilder<G, K>;
+interface ProductionRuleBinder<
+    NonTerminals,
+    Key extends keyof NonTerminals,
+    Params extends ProductionParameters<NonTerminals>
+> {
+    produce(rule: ProductionRule<NonTerminals, Key, Params>): ProductionBuilder<NonTerminals, Key>;
 }
 
-class ProductionBuilderImpl<G, K extends keyof G> implements ProductionBuilder<G, K> {
-    private production: Production<G, K> = [];
+class ProductionBuilderImpl<NonTerminals, Key extends keyof NonTerminals>
+    implements ProductionBuilder<NonTerminals, Key> {
+    private production: Production<NonTerminals, Key> = [];
 
-    public given<P extends ProductionParameters<G>>(...parameters: P): ProductionRuleBinder<G, K, P> {
+    public given<Params extends ProductionParameters<NonTerminals>>(
+        ...parameters: Params
+    ): ProductionRuleBinder<NonTerminals, Key, Params> {
         return {
             produce: rule => {
                 // TODO Can we remove this cast somehow?
-                this.production.push({ parameters, rule: rule as ProductionRule<G, K, any[]> });
+                this.production.push({ parameters, rule: rule as ProductionRule<NonTerminals, Key, any[]> });
                 return this;
             },
         };

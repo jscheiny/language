@@ -1,17 +1,17 @@
 import { Operator } from "../constants";
 import { defineGrammar } from "./grammarBuilder";
 
-interface Expression {
+export interface Expression {
     left: Expression | number;
     operator: Operator;
     right: Expression | number;
 }
 
-interface Productions {
+interface NonTerminals {
     Expression: Expression;
 }
 
-export const GRAMMAR = defineGrammar<Productions>(define => ({
+export const GRAMMAR = defineGrammar<NonTerminals>(define => ({
     Expression: define("Expression")
         // Expression -> NumberLiteral
         .given("NumberLiteral")
@@ -19,6 +19,9 @@ export const GRAMMAR = defineGrammar<Productions>(define => ({
         // Expression -> ( Expression )
         .given(Operator.OPEN_PAREN, "Expression", Operator.CLOSE_PAREN)
         .produce((_open, expression, _close) => expression)
+        // Expression -> Expression * Expression
+        .given("Expression", Operator.MULTIPLY, "Expression")
+        .produce((left, operator, right) => ({ left, operator: operator, right }))
         // Expression -> Expression + Expression
         .given("Expression", Operator.ADD, "Expression")
         .produce((left, operator, right) => ({ left, operator: operator, right }))
