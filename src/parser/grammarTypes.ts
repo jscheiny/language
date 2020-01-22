@@ -48,6 +48,11 @@ export type ProductionParameters<NonTerminal, Terminal extends BaseTerminal> = A
 /** A single input of a production as it is passed into the rule function of the production */
 export type ProductionArgument<NonTerminal, Terminal extends BaseTerminal> = NonTerminal[keyof NonTerminal] | Terminal;
 
+/** An array of inputs to a production as they are passed into the rule function of the production */
+export type ProductionArguments<NonTerminal, Terminal extends BaseTerminal> = Array<
+    ProductionArgument<NonTerminal, Terminal>
+>;
+
 /** Converts an array of production parameters into production arguments */
 type UnwrapArgs<
     NonTerminal,
