@@ -1,54 +1,72 @@
-import { ConstantToken, VariableToken, VariableTokenKind } from "../tokenizer/tokens";
+export type BaseTerminal = string | { kind: string };
+export type ConstantTerminal<Terminal extends BaseTerminal> = Extract<Terminal, string>;
+export type VariableTerminal<Terminal extends BaseTerminal> = Exclude<Terminal, string>;
+type VariableTerminalKind<Terminal extends BaseTerminal> = VariableTerminal<Terminal>["kind"];
 
 /** A single input of a production as it is given by the definition of the production */
-export type ProductionParameter<NonTerminals> = keyof NonTerminals | ConstantToken | VariableTokenKind;
+export type ProductionParameter<NonTerminal, Terminal extends BaseTerminal> =
+    | keyof NonTerminal
+    | ConstantTerminal<Terminal>
+    | VariableTerminalKind<Terminal>;
 
 /** An array of inputs to a production as given by the definition of the production */
-export type ProductionParameters<NonTerminals> = Array<ProductionParameter<NonTerminals>>;
+export type ProductionParameters<NonTerminal, Terminal extends BaseTerminal> = Array<
+    ProductionParameter<NonTerminal, Terminal>
+>;
 
 /** A single input of a production as it is passed into the rule function of the production */
-export type ProductionArgument<NonTerminals> =
-    | NonTerminals[keyof NonTerminals]
-    | UnwrapArg<NonTerminals, ProductionParameter<NonTerminals>>;
+export type ProductionArgument<NonTerminal, Terminal extends BaseTerminal> = NonTerminal[keyof NonTerminal] | Terminal;
 
 /** A map from non-terminals to productions for those non-terminals  */
-export type Grammar<NonTerminals> = { [Key in keyof NonTerminals]: Production<NonTerminals, Key> };
+export type Grammar<NonTerminal, Terminal extends BaseTerminal> = {
+    [Key in keyof NonTerminal]: Production<NonTerminal, Terminal, Key>
+};
 
 /** An array of productions for a given non-terminal */
-export type Production<NonTerminals, Key extends keyof NonTerminals> = Array<
-    ProductionDefinition<NonTerminals, Key, any[]>
+export type Production<NonTerminal, Terminal extends BaseTerminal, Key extends keyof NonTerminal> = Array<
+    ProductionDefinition<NonTerminal, Terminal, Key, any[]>
 >;
 
 /** A single production for a non-terminal, given a set of inputs and a rule for how that production should be handled */
 export interface ProductionDefinition<
-    NonTerminals,
-    Key extends keyof NonTerminals,
-    Params extends ProductionParameters<NonTerminals>
+    NonTerminal,
+    Terminal extends BaseTerminal,
+    Key extends keyof NonTerminal,
+    Params extends ProductionParameters<NonTerminal, Terminal>
 > {
     parameters: Params;
-    rule: ProductionRule<NonTerminals, Key, Params>;
+    rule: ProductionRule<NonTerminal, Terminal, Key, Params>;
 }
 
 /** A function that takes the arguments of a production and produces the resulting type of the non-terminal */
 export interface ProductionRule<
-    NonTerminals,
-    Key extends keyof NonTerminals,
-    Params extends ProductionParameters<NonTerminals>
+    NonTerminal,
+    Terminal extends BaseTerminal,
+    Key extends keyof NonTerminal,
+    Params extends ProductionParameters<NonTerminal, Terminal>
 > {
-    (...args: UnwrapArgs<NonTerminals, Params>): NonTerminals[Key];
+    (...args: UnwrapArgs<NonTerminal, Terminal, Params>): NonTerminal[Key];
 }
 
 /** Converts an array of production parameters into production arguments */
-type UnwrapArgs<NonTerminals, Params extends ProductionParameters<NonTerminals>> = {
-    [I in keyof Params]: UnwrapArg<NonTerminals, Params[I]>
-};
+type UnwrapArgs<
+    NonTerminal,
+    Terminal extends BaseTerminal,
+    Params extends ProductionParameters<NonTerminal, Terminal>
+> = { [I in keyof Params]: UnwrapArg<NonTerminal, Terminal, Params[I]> };
 
 /** Converts a single production parameter into a production argument */
-type UnwrapArg<NonTerminals, Param> =
-    | UnwrapNonTerminal<NonTerminals, Param>
-    | UnwrapConstantTerminal<Param>
-    | UnwrapVariableTerminal<Param>;
+type UnwrapArg<NonTerminal, Terminal extends BaseTerminal, Param> =
+    | UnwrapNonTerminal<NonTerminal, Param>
+    | UnwrapConstantTerminal<Terminal, Param>
+    | UnwrapVariableTerminal<Terminal, Param>;
 
-type UnwrapNonTerminal<NonTerminals, Param> = Param extends keyof NonTerminals ? NonTerminals[Param] : never;
-type UnwrapConstantTerminal<Param> = Param extends ConstantToken ? Param : never;
-type UnwrapVariableTerminal<Param> = Param extends VariableTokenKind ? Extract<VariableToken, { kind: Param }> : never;
+type UnwrapNonTerminal<NonTerminal, Param> = Param extends keyof NonTerminal ? NonTerminal[Param] : never;
+
+type UnwrapConstantTerminal<Terminal extends BaseTerminal, Param> = Param extends ConstantTerminal<Terminal>
+    ? Param
+    : never;
+
+type UnwrapVariableTerminal<Terminal extends BaseTerminal, Param> = Param extends VariableTerminalKind<Terminal>
+    ? Extract<VariableTerminal<Terminal>, { kind: Param }>
+    : never;

@@ -1,4 +1,5 @@
 import { Operator } from "../constants";
+import { Token } from "../tokenizer/tokens";
 import { defineGrammar } from "./grammarBuilder";
 
 export interface Expression {
@@ -7,11 +8,11 @@ export interface Expression {
     right: Expression | number;
 }
 
-interface NonTerminals {
+interface NonTerminal {
     Expression: Expression;
 }
 
-export const GRAMMAR = defineGrammar<NonTerminals>(define => ({
+export const GRAMMAR = defineGrammar<NonTerminal, Token>(define => ({
     Expression: define("Expression")
         // Expression -> NumberLiteral
         .given("NumberLiteral")
