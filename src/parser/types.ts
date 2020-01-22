@@ -6,7 +6,7 @@ export type ProductionParameter<NonTerminals> = keyof NonTerminals | ConstantTok
 /** An array of inputs to a production as given by the definition of the production */
 export type ProductionParameters<NonTerminals> = Array<ProductionParameter<NonTerminals>>;
 
-/** A single input of a production as it is given to the rule function of the production */
+/** A single input of a production as it is passed into the rule function of the production */
 export type ProductionArgument<NonTerminals> =
     | NonTerminals[keyof NonTerminals]
     | UnwrapArg<NonTerminals, ProductionParameter<NonTerminals>>;
@@ -14,12 +14,12 @@ export type ProductionArgument<NonTerminals> =
 /** A map from non-terminals to productions for those non-terminals  */
 export type Grammar<NonTerminals> = { [Key in keyof NonTerminals]: Production<NonTerminals, Key> };
 
-/** An array of productions for a given non-terminal, K */
+/** An array of productions for a given non-terminal */
 export type Production<NonTerminals, Key extends keyof NonTerminals> = Array<
     ProductionDefinition<NonTerminals, Key, any[]>
 >;
 
-/** A single production for a non-terminal K, given a set of inputs and a rule for how that production should be handled */
+/** A single production for a non-terminal, given a set of inputs and a rule for how that production should be handled */
 export interface ProductionDefinition<
     NonTerminals,
     Key extends keyof NonTerminals,
@@ -29,10 +29,7 @@ export interface ProductionDefinition<
     rule: ProductionRule<NonTerminals, Key, Params>;
 }
 
-/**
- * A function that takes the arguments of a production and produces the resulting type of the production as specified
- * by P[K].
- */
+/** A function that takes the arguments of a production and produces the resulting type of the non-terminal */
 export interface ProductionRule<
     NonTerminals,
     Key extends keyof NonTerminals,
