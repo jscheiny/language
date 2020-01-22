@@ -42,3 +42,4 @@ export type Token =
 
 export type ConstantToken = Extract<Token, string>;
 export type VariableToken = Exclude<Token, string>;
+export type VariableTokenKind = VariableToken["kind"];
