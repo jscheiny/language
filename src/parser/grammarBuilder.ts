@@ -1,26 +1,26 @@
 import { Grammar, Production, ProductionParameters, ProductionRule } from "./types";
 
-interface ProductionBuilderFactory<P> {
-    <K extends keyof P>(key: K): ProductionBuilder<P, K>;
+interface ProductionBuilderFactory<G> {
+    <K extends keyof G>(key: K): ProductionBuilder<G, K>;
 }
 
-interface ProductionBuilder<P, K extends keyof P> {
-    given<I extends ProductionParameters<P>>(...inputs: I): ProductionRuleBinder<P, K, I>;
-    build(): Production<P, K>;
+interface ProductionBuilder<G, K extends keyof G> {
+    given<P extends ProductionParameters<G>>(...parameters: P): ProductionRuleBinder<G, K, P>;
+    build(): Production<G, K>;
 }
 
-interface ProductionRuleBinder<P, K extends keyof P, I extends ProductionParameters<P>> {
-    produce(rule: ProductionRule<P, K, I>): ProductionBuilder<P, K>;
+interface ProductionRuleBinder<G, K extends keyof G, P extends ProductionParameters<G>> {
+    produce(rule: ProductionRule<G, K, P>): ProductionBuilder<G, K>;
 }
 
-class ProductionBuilderImpl<P, K extends keyof P> implements ProductionBuilder<P, K> {
-    private production: Production<P, K> = [];
+class ProductionBuilderImpl<G, K extends keyof G> implements ProductionBuilder<G, K> {
+    private production: Production<G, K> = [];
 
-    public given<I extends ProductionParameters<P>>(...parameters: I): ProductionRuleBinder<P, K, I> {
+    public given<P extends ProductionParameters<G>>(...parameters: P): ProductionRuleBinder<G, K, P> {
         return {
             produce: rule => {
                 // TODO Can we remove this cast somehow?
-                this.production.push({ parameters, rule: rule as ProductionRule<P, K, any[]> });
+                this.production.push({ parameters, rule: rule as ProductionRule<G, K, any[]> });
                 return this;
             },
         };
@@ -31,7 +31,6 @@ class ProductionBuilderImpl<P, K extends keyof P> implements ProductionBuilder<P
     }
 }
 
-export function defineGrammar<P>(create: (define: ProductionBuilderFactory<P>) => Grammar<P>): Grammar<P> {
-    const defineProduction: ProductionBuilderFactory<P> = () => new ProductionBuilderImpl();
-    return create(defineProduction);
+export function defineGrammar<G>(create: (define: ProductionBuilderFactory<G>) => Grammar<G>): Grammar<G> {
+    return create(() => new ProductionBuilderImpl());
 }
