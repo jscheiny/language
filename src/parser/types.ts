@@ -1,22 +1,3 @@
-export type BaseTerminal = string | { kind: string };
-export type ConstantTerminal<Terminal extends BaseTerminal> = Extract<Terminal, string>;
-export type VariableTerminal<Terminal extends BaseTerminal> = Exclude<Terminal, string>;
-type VariableTerminalKind<Terminal extends BaseTerminal> = VariableTerminal<Terminal>["kind"];
-
-/** A single input of a production as it is given by the definition of the production */
-export type ProductionParameter<NonTerminal, Terminal extends BaseTerminal> =
-    | keyof NonTerminal
-    | ConstantTerminal<Terminal>
-    | VariableTerminalKind<Terminal>;
-
-/** An array of inputs to a production as given by the definition of the production */
-export type ProductionParameters<NonTerminal, Terminal extends BaseTerminal> = Array<
-    ProductionParameter<NonTerminal, Terminal>
->;
-
-/** A single input of a production as it is passed into the rule function of the production */
-export type ProductionArgument<NonTerminal, Terminal extends BaseTerminal> = NonTerminal[keyof NonTerminal] | Terminal;
-
 /** A map from non-terminals to productions for those non-terminals  */
 export type Grammar<NonTerminal, Terminal extends BaseTerminal> = {
     [Key in keyof NonTerminal]: Production<NonTerminal, Terminal, Key>
@@ -48,6 +29,20 @@ export interface ProductionRule<
     (...args: UnwrapArgs<NonTerminal, Terminal, Params>): NonTerminal[Key];
 }
 
+/** A single input of a production as it is given by the definition of the production */
+export type ProductionParameter<NonTerminal, Terminal extends BaseTerminal> =
+    | keyof NonTerminal
+    | ConstantTerminal<Terminal>
+    | VariableTerminalKind<Terminal>;
+
+/** An array of inputs to a production as given by the definition of the production */
+export type ProductionParameters<NonTerminal, Terminal extends BaseTerminal> = Array<
+    ProductionParameter<NonTerminal, Terminal>
+>;
+
+/** A single input of a production as it is passed into the rule function of the production */
+export type ProductionArgument<NonTerminal, Terminal extends BaseTerminal> = NonTerminal[keyof NonTerminal] | Terminal;
+
 /** Converts an array of production parameters into production arguments */
 type UnwrapArgs<
     NonTerminal,
@@ -70,3 +65,9 @@ type UnwrapConstantTerminal<Terminal extends BaseTerminal, Param> = Param extend
 type UnwrapVariableTerminal<Terminal extends BaseTerminal, Param> = Param extends VariableTerminalKind<Terminal>
     ? Extract<VariableTerminal<Terminal>, { kind: Param }>
     : never;
+
+/** The base type of a terminal token. This can be either a constant string or a variable token which has a specific kind. */
+export type BaseTerminal = string | { kind: string };
+export type ConstantTerminal<Terminal extends BaseTerminal> = Extract<Terminal, string>;
+export type VariableTerminal<Terminal extends BaseTerminal> = Exclude<Terminal, string>;
+type VariableTerminalKind<Terminal extends BaseTerminal> = VariableTerminal<Terminal>["kind"];
