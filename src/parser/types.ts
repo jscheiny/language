@@ -1,62 +1,29 @@
 import { ConstantToken, VariableToken } from "../tokenizer/tokens";
 
+// Inputs
+
 type VariableTokenType = VariableToken["kind"];
 export type InputType<P> = keyof P | ConstantToken | VariableTokenType;
 
-interface ProductionFactory<P> {
-    <K extends keyof P>(key: K): ProductionInputsBinder<P, K>;
+// Productions
+
+export type Grammar<P> = { [K in keyof P]: Production<P, K> };
+
+export type Production<P, K extends keyof P> = Array<ProductionDefinition<P, K, any[]>>;
+
+export interface ProductionDefinition<P, K extends keyof P, I extends Array<InputType<P>>> {
+    inputs: I;
+    rule: ProductionRule<P, K, I>;
 }
 
-interface ProductionInputsBinder<P, K extends keyof P> {
-    given: <I extends InputType<P>[]>(...inputs: I) => ProductionDefinitionBinder<P, K, I>;
-}
-
-interface ProductionDefinitionBinder<P, K extends keyof P, I extends InputType<P>[]> {
-    derive: (rule: ProductionDerivedRule<P, K, I>) => ProductionDerivedDefinition<P, K, I>;
-    union: (rule: ProductionUnionRule<P, K, I>) => ProductionUnionDefinition<P, K, I>;
-}
-
-interface ProductionDerivedRule<P, K extends keyof P, I extends InputType<P>[]> {
+export interface ProductionRule<P, K extends keyof P, I extends Array<InputType<P>>> {
     (...inputs: UnwrapInputs<P, I>): P[K];
 }
 
-interface ProductionUnionRule<P, K extends keyof P, I extends InputType<P>[]> {
-    (input: UnwrapInput<P, ArrayType<I>>): P[K];
-}
+type UnwrapInputs<P, I extends Array<InputType<P>>> = { [K in keyof I]: UnwrapInput<P, I[K]> };
 
-interface ProductionDerivedDefinition<P, K extends keyof P, I extends InputType<P>[]> {
-    kind: "derived";
-    inputs: I;
-    rule: ProductionDerivedRule<P, K, I>;
-}
+type UnwrapInput<P, I> = UnwrapNonTerminal<P, I> | UnwrapConstantTerminal<I> | UnwrapVariableTerminal<I>;
 
-interface ProductionUnionDefinition<P, K extends keyof P, I extends InputType<P>[]> {
-    kind: "union";
-    inputs: I;
-    rule: ProductionUnionRule<P, K, I>;
-}
-
-export type ProductionDefinition<P, K extends keyof P, I extends InputType<P>[]> =
-    | ProductionDerivedDefinition<P, K, I>
-    | ProductionUnionDefinition<P, K, I>;
-
-type UnwrapInputs<P, I extends InputType<P>[]> = { [K in keyof I]: UnwrapInput<P, I[K]> };
-
-type UnwrapInput<P, I> = I extends keyof P
-    ? P[I]
-    : I extends ConstantToken ? I : I extends VariableTokenType ? Extract<VariableToken, { kind: I }> : never;
-
-type ArrayType<T> = T extends Array<infer U> ? U : never;
-
-export type Grammar<P> = { [K in keyof P]: ProductionDefinition<P, K, any[]> };
-
-export function createGrammar<P>(create: (define: ProductionFactory<P>) => Grammar<P>): Grammar<P> {
-    const define: ProductionFactory<P> = () => ({
-        given: <I extends InputType<P>[]>(...inputs: I) => ({
-            derive: rule => ({ kind: "derived", inputs, rule }),
-            union: rule => ({ kind: "union", inputs, rule }),
-        }),
-    });
-
-    return create(define);
-}
+type UnwrapNonTerminal<P, I> = I extends keyof P ? P[I] : never;
+type UnwrapConstantTerminal<I> = I extends ConstantToken ? I : never;
+type UnwrapVariableTerminal<I> = I extends VariableTokenType ? Extract<VariableToken, { kind: I }> : never;
