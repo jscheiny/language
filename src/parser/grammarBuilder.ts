@@ -1,4 +1,4 @@
-import { BaseTerminal, Grammar, Production, ProductionParameters, ProductionRule } from "./types";
+import { BaseTerminal, Grammar, GrammarProductions, Production, ProductionParameters, ProductionRule } from "./types";
 
 interface ProductionBuilderFactory<NonTerminal, Terminal extends BaseTerminal> {
     <Key extends keyof NonTerminal>(key: Key): ProductionBuilder<NonTerminal, Terminal, Key>;
@@ -42,7 +42,13 @@ class ProductionBuilderImpl<NonTerminal, Terminal extends BaseTerminal, Key exte
 }
 
 export function defineGrammar<NonTerminal, Terminal extends BaseTerminal>(
-    create: (define: ProductionBuilderFactory<NonTerminal, Terminal>) => Grammar<NonTerminal, Terminal>,
+    start: keyof NonTerminal,
+    getProductions: (
+        define: ProductionBuilderFactory<NonTerminal, Terminal>,
+    ) => GrammarProductions<NonTerminal, Terminal>,
 ): Grammar<NonTerminal, Terminal> {
-    return create(() => new ProductionBuilderImpl());
+    return {
+        start,
+        productions: getProductions(() => new ProductionBuilderImpl()),
+    };
 }

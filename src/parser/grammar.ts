@@ -12,7 +12,7 @@ interface NonTerminal {
     Expression: Expression;
 }
 
-export const GRAMMAR = defineGrammar<NonTerminal, Token>(define => ({
+export const GRAMMAR = defineGrammar<NonTerminal, Token>("Expression", define => ({
     Expression: define("Expression")
         // Expression -> NumberLiteral
         .given("NumberLiteral")
