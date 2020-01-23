@@ -31,13 +31,24 @@ class ProductionBuilderImpl<NonTerminal, Terminal extends BaseTerminal, Key exte
     implements ProductionBuilder<NonTerminal, Terminal, Key> {
     private production: Production<NonTerminal, Terminal, Key> = [];
 
+    constructor(private key: Key) {}
+
     public given<Params extends ProductionParameters<NonTerminal, Terminal>>(
         ...parameters: Params
     ): ProductionRuleBinder<NonTerminal, Terminal, Key, Params> {
         return {
             produce: rule => {
                 // TODO Can we remove this cast somehow?
-                this.production.push({ parameters, rule: rule as ProductionRule<NonTerminal, Terminal, Key, any[]> });
+                this.production.push({
+                    key: this.key,
+                    parameters,
+                    rule: rule as ProductionRule<
+                        NonTerminal,
+                        Terminal,
+                        Key,
+                        ProductionParameters<NonTerminal, Terminal>
+                    >,
+                });
                 return this;
             },
         };
@@ -56,6 +67,6 @@ export function defineGrammar<NonTerminal, Terminal extends BaseTerminal>(
 ): Grammar<NonTerminal, Terminal> {
     return {
         start,
-        productions: getProductions(() => new ProductionBuilderImpl()),
+        productions: getProductions(key => new ProductionBuilderImpl(key)),
     };
 }

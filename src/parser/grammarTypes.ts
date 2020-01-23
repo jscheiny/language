@@ -10,7 +10,7 @@ export type GrammarProductions<NonTerminal, Terminal extends BaseTerminal> = {
 
 /** An array of productions for a given non-terminal */
 export type Production<NonTerminal, Terminal extends BaseTerminal, Key extends keyof NonTerminal> = Array<
-    ProductionDefinition<NonTerminal, Terminal, Key, any[]>
+    ProductionDefinition<NonTerminal, Terminal, Key, ProductionParameters<NonTerminal, Terminal>>
 >;
 
 /** A single production for a non-terminal, given a set of inputs and a rule for how that production should be handled */
@@ -20,6 +20,7 @@ export interface ProductionDefinition<
     Key extends keyof NonTerminal,
     Params extends ProductionParameters<NonTerminal, Terminal>
 > {
+    key: Key;
     parameters: Params;
     rule: ProductionRule<NonTerminal, Terminal, Key, Params>;
 }
