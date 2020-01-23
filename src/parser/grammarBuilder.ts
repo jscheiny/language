@@ -1,53 +1,38 @@
 import {
-    BaseTerminal,
     Grammar,
     GrammarProductions,
     Production,
     ProductionParameters,
     ProductionRule,
+    Terminal,
 } from "./grammarTypes";
 
-interface ProductionBuilderFactory<NonTerminal, Terminal extends BaseTerminal> {
-    <Key extends keyof NonTerminal>(key: Key): ProductionBuilder<NonTerminal, Terminal, Key>;
+interface ProductionBuilderFactory<N, T extends Terminal> {
+    <K extends keyof N>(key: K): ProductionBuilder<N, T, K>;
 }
 
-interface ProductionBuilder<NonTerminal, Terminal extends BaseTerminal, Key extends keyof NonTerminal> {
-    given<Params extends ProductionParameters<NonTerminal, Terminal>>(
-        ...parameters: Params
-    ): ProductionRuleBinder<NonTerminal, Terminal, Key, Params>;
-    build(): Production<NonTerminal, Terminal, Key>;
+interface ProductionBuilder<N, T extends Terminal, K extends keyof N> {
+    given<P extends ProductionParameters<N, T>>(...parameters: P): ProductionRuleBinder<N, T, K, P>;
+    build(): Production<N, T, K>;
 }
 
-interface ProductionRuleBinder<
-    NonTerminal,
-    Terminal extends BaseTerminal,
-    Key extends keyof NonTerminal,
-    Params extends ProductionParameters<NonTerminal, Terminal>
-> {
-    produce(rule: ProductionRule<NonTerminal, Terminal, Key, Params>): ProductionBuilder<NonTerminal, Terminal, Key>;
+interface ProductionRuleBinder<N, T extends Terminal, K extends keyof N, P extends ProductionParameters<N, T>> {
+    produce(rule: ProductionRule<N, T, K, P>): ProductionBuilder<N, T, K>;
 }
 
-class ProductionBuilderImpl<NonTerminal, Terminal extends BaseTerminal, Key extends keyof NonTerminal>
-    implements ProductionBuilder<NonTerminal, Terminal, Key> {
-    private production: Production<NonTerminal, Terminal, Key> = [];
+class ProductionBuilderImpl<N, T extends Terminal, K extends keyof N> implements ProductionBuilder<N, T, K> {
+    private production: Production<N, T, K> = [];
 
-    constructor(private key: Key) {}
+    constructor(private key: K) {}
 
-    public given<Params extends ProductionParameters<NonTerminal, Terminal>>(
-        ...parameters: Params
-    ): ProductionRuleBinder<NonTerminal, Terminal, Key, Params> {
+    public given<P extends ProductionParameters<N, T>>(...parameters: P): ProductionRuleBinder<N, T, K, P> {
         return {
             produce: rule => {
                 // TODO Can we remove this cast somehow?
                 this.production.push({
                     key: this.key,
                     parameters,
-                    rule: rule as ProductionRule<
-                        NonTerminal,
-                        Terminal,
-                        Key,
-                        ProductionParameters<NonTerminal, Terminal>
-                    >,
+                    rule: rule as ProductionRule<N, T, K, ProductionParameters<N, T>>,
                 });
                 return this;
             },
@@ -59,12 +44,10 @@ class ProductionBuilderImpl<NonTerminal, Terminal extends BaseTerminal, Key exte
     }
 }
 
-export function defineGrammar<NonTerminal, Terminal extends BaseTerminal>(
-    start: keyof NonTerminal,
-    getProductions: (
-        define: ProductionBuilderFactory<NonTerminal, Terminal>,
-    ) => GrammarProductions<NonTerminal, Terminal>,
-): Grammar<NonTerminal, Terminal> {
+export function defineGrammar<N, T extends Terminal>(
+    start: keyof N,
+    getProductions: (define: ProductionBuilderFactory<N, T>) => GrammarProductions<N, T>,
+): Grammar<N, T> {
     return {
         start,
         productions: getProductions(key => new ProductionBuilderImpl(key)),

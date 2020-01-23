@@ -1,24 +1,21 @@
 import {
-    BaseTerminal,
     ProductionArguments,
     ProductionDefinition,
     ProductionParameter,
     ProductionParameters,
+    Terminal,
     VariableTerminal,
 } from "./grammarTypes";
 import { NonTerminalToken, ParseToken, ParseTokens, TerminalToken } from "./parserTypes";
 
-export function createTerminalToken<Terminal extends BaseTerminal>(value: Terminal): TerminalToken<Terminal> {
+export function createTerminalToken<T extends Terminal>(value: T): TerminalToken<T> {
     return {
         kind: "terminal",
         value,
     };
 }
 
-export function createNonTerminalToken<NonTerminal, Key extends keyof NonTerminal>(
-    key: Key,
-    value: NonTerminal[Key],
-): NonTerminalToken<NonTerminal, Key> {
+export function createNonTerminalToken<N, K extends keyof N>(key: K, value: N[K]): NonTerminalToken<N, K> {
     return {
         kind: "non-terminal",
         key,
@@ -26,14 +23,9 @@ export function createNonTerminalToken<NonTerminal, Key extends keyof NonTermina
     };
 }
 
-export function isMatchingProduction<
-    NonTerminal,
-    Terminal extends BaseTerminal,
-    Key extends keyof NonTerminal,
-    Params extends ProductionParameters<NonTerminal, Terminal>
->(
-    production: ProductionDefinition<NonTerminal, Terminal, Key, Params>,
-    tokens: Array<ParseToken<NonTerminal, Terminal>>,
+export function isMatchingProduction<N, T extends Terminal, K extends keyof N, P extends ProductionParameters<N, T>>(
+    production: ProductionDefinition<N, T, K, P>,
+    tokens: ParseTokens<N, T>,
     tokenOffset: number,
 ) {
     return production.parameters.every((parameter, index) => {
@@ -42,9 +34,9 @@ export function isMatchingProduction<
     });
 }
 
-function isMatchingToken<NonTerminal, Terminal extends BaseTerminal>(
-    token: ParseToken<NonTerminal, Terminal>,
-    parameter: ProductionParameter<NonTerminal, Terminal>,
+export function isMatchingToken<N, T extends Terminal>(
+    token: ParseToken<N, T>,
+    parameter: ProductionParameter<N, T>,
 ): boolean {
     if (token.kind === "non-terminal") {
         return token.key === parameter;
@@ -56,21 +48,16 @@ function isMatchingToken<NonTerminal, Terminal extends BaseTerminal>(
         return value === parameter;
     }
     // If the terminal is variable, check the kind
-    return (value as VariableTerminal<Terminal>).kind === parameter;
+    return (value as VariableTerminal<T>).kind === parameter;
 }
 
-export function applyProduction<
-    NonTerminal,
-    Terminal extends BaseTerminal,
-    Key extends keyof NonTerminal,
-    Params extends ProductionParameters<NonTerminal, Terminal>
->(
-    key: Key,
-    production: ProductionDefinition<NonTerminal, Terminal, Key, Params>,
-    tokens: ParseTokens<NonTerminal, Terminal>,
+export function applyProduction<N, T extends Terminal, K extends keyof N, P extends ProductionParameters<N, T>>(
+    key: K,
+    production: ProductionDefinition<N, T, K, P>,
+    tokens: ParseTokens<N, T>,
     tokenOffset: number,
-): NonTerminalToken<NonTerminal, Key> {
-    const args: ProductionArguments<NonTerminal, Terminal> = production.parameters.map(
+): NonTerminalToken<N, K> {
+    const args: ProductionArguments<N, T> = production.parameters.map(
         (_param, index) => tokens[index + tokenOffset].value,
     );
 

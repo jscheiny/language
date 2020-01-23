@@ -1,18 +1,16 @@
-import { BaseTerminal } from "./grammarTypes";
+import { Terminal } from "./grammarTypes";
 
-export interface TerminalToken<Terminal extends BaseTerminal> {
+export interface TerminalToken<T extends Terminal> {
     kind: "terminal";
-    value: Terminal;
+    value: T;
 }
 
-export interface NonTerminalToken<NonTerminal, Key extends keyof NonTerminal> {
+export interface NonTerminalToken<N, K extends keyof N> {
     kind: "non-terminal";
-    key: Key;
-    value: NonTerminal[Key];
+    key: K;
+    value: N[K];
 }
 
-export type ParseToken<NonTerminal, Terminal extends BaseTerminal> =
-    | TerminalToken<Terminal>
-    | NonTerminalToken<NonTerminal, keyof NonTerminal>;
+export type ParseToken<N, T extends Terminal> = TerminalToken<T> | NonTerminalToken<N, keyof N>;
 
-export type ParseTokens<NonTerminal, Terminal extends BaseTerminal> = Array<ParseToken<NonTerminal, Terminal>>;
+export type ParseTokens<N, T extends Terminal> = Array<ParseToken<N, T>>;
