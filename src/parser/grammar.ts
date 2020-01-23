@@ -9,10 +9,11 @@ export interface Expression {
 }
 
 interface NonTerminal {
+    Start: Expression;
     Expression: Expression;
 }
 
-export const GRAMMAR = defineGrammar<NonTerminal, Token>("Expression", define => ({
+export const GRAMMAR = defineGrammar<NonTerminal, Token>("Start", define => ({
     Expression: define("Expression")
         // Expression -> NumberLiteral
         .given("NumberLiteral")
@@ -26,5 +27,9 @@ export const GRAMMAR = defineGrammar<NonTerminal, Token>("Expression", define =>
         // Expression -> Expression + Expression
         .given("Expression", Operator.ADD, "Expression")
         .produce((left, operator, right) => ({ left, operator: operator, right }))
+        .build(),
+    Start: define("Start")
+        .given("Expression")
+        .produce(expr => expr)
         .build(),
 }));
